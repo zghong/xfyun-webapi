@@ -3,21 +3,19 @@
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
 
-using namespace std;
-
 /**
  * 获取当前时间戳，并格式化成rfc1123格式
  * 输入：
  * 输出：当前时间戳的rfc1123格式字符串。"Thu, 05 Dec 2019 09:54:17 CST"
  */
-string get_time_rfc1123()
+std::string get_time_rfc1123()
 {
 	time_t rawtime;
 	time(&rawtime);
 	char date[64];
 	strftime(date, sizeof(date), "%a, %d %b %Y %X %Z\n", localtime(&rawtime));
 
-	return string(date);
+	return std::string(date);
 }
 
 /**
@@ -25,7 +23,7 @@ string get_time_rfc1123()
  * 输入：data，待sha256的数据；key，mac的密钥
  * 输出：256位加密字符，为方便处理，输出时转换为了string。"e�FX��}U0���^V!D@�����`|v"
  */
-string get_hmac_sha256(const string &data, const string &key)
+std::string get_hmac_sha256(const std::string &data, const std::string &key)
 {
 	unsigned char *result = new unsigned char[40];
 	unsigned int result_len = 0;
@@ -41,7 +39,7 @@ string get_hmac_sha256(const string &data, const string &key)
 	// 不可以直接 return (char *)result
 	// 因为result后面还有空余字符，加密的值要严格控制在result_len的长度范围内
 	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-	return string((char *)result, result_len);
+	return std::string((char *)result, result_len);
 }
 
 /**
@@ -49,13 +47,13 @@ string get_hmac_sha256(const string &data, const string &key)
  * 输入：data，待编码数据
  * 输出：data被base64编码后的字符串。"KuSCRlicg30QVTChBdToXlYhREDPxdkDiKNgfHYiDWU="
  */
-string get_base64_encode(const string &data)
+std::string get_base64_encode(const std::string &data)
 {
-	typedef boost::archive::iterators::base64_from_binary<boost::archive::iterators::transform_width<string::const_iterator, 6, 8>> Base64EncodeIterator;
+	typedef boost::archive::iterators::base64_from_binary<boost::archive::iterators::transform_width<std::string::const_iterator, 6, 8>> Base64EncodeIterator;
 
-	stringstream result;
+	std::stringstream result;
 
-	copy(Base64EncodeIterator(data.begin()), Base64EncodeIterator(data.end()), ostream_iterator<char>(result));
+	std::copy(Base64EncodeIterator(data.begin()), Base64EncodeIterator(data.end()), std::ostream_iterator<char>(result));
 	size_t equal_count = (3 - data.length() % 3) % 3;
 	for (size_t i = 0; i < equal_count; i++)
 	{
@@ -70,10 +68,10 @@ string get_base64_encode(const string &data)
  * 输入：url，待编码的url
  * 输出：被编码转义后的url
  */
-string get_url_encode(const string &url)
+std::string get_url_encode(const std::string &url)
 {
 	typedef unsigned char BYTE;
-	string result;
+	std::string result;
 	size_t len = url.length();
 	unsigned char *pBytes = (unsigned char *)url.c_str();
 	char szAlnum[2];
