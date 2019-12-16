@@ -223,8 +223,8 @@ void WSSClient::on_message(websocketpp::connection_hdl hdl, client::message_ptr 
 // 发送音频数据给服务器
 void WSSClient::send_data(websocketpp::connection_hdl hdl)
 {
-	int frameSize = 1280 * 2;						 // 每一帧的音频大小
-	double intervel = 0.04 * 2;						 // 发送音频间隔(单位:s)
+	int frame_size = 1280;							 // 每一帧的音频大小
+	double intervel = 0.04;							 // 发送音频间隔(单位:s)
 	STATUS_INFO current_status = STATUS_FIRST_FRAME; // 音频的状态信息，标识音频是第一帧，还是中间帧、最后一帧
 
 	FILE *fp = fopen(this->AudioFile.c_str(), "rb");
@@ -236,10 +236,10 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 
 	// 音频数据帧缓冲区
 	// int count = 0;
-	char *buffer = new char[frameSize + 10];
+	char *buffer = new char[frame_size + 10];
 	while (current_status != STATUS_LAST_FRAME)
 	{
-		int size = fread(buffer, sizeof(char), frameSize, fp);
+		int size = fread(buffer, sizeof(char), frame_size, fp);
 		// TODO: 音频编解码
 
 		// 读到的字节数为0，说明当前是最后一帧
@@ -311,9 +311,8 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 // 生成接口鉴权url
 string WSSClient::get_url()
 {
-	// 生成RFC1123格式的时间戳，"Thu, 05 Dec 2019 09:54:17 CST"
+	// 生成RFC1123格式的时间戳，"Thu, 05 Dec 2019 09:54:17 GMT"
 	string date = get_time_rfc1123();
-	// string date = "Thu, 05 Dec 2019 09:54:17 CST";
 
 	// 拼接signature的原始字符串
 	string signature_origin = "host: iat-api.xfyun.cn\n";

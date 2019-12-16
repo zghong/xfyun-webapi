@@ -6,14 +6,13 @@
 /**
  * 获取当前时间戳，并格式化成rfc1123格式
  * 输入：
- * 输出：当前时间戳的rfc1123格式字符串。"Thu, 05 Dec 2019 09:54:17 CST"
+ * 输出：当前时间戳的rfc1123格式字符串。"Thu, 05 Dec 2019 09:54:17 GMT"
  */
 std::string get_time_rfc1123()
 {
-	time_t rawtime;
-	time(&rawtime);
+	time_t rawtime = time(NULL);
 	char date[64];
-	strftime(date, sizeof(date), "%a, %d %b %Y %X %Z\n", localtime(&rawtime));
+	strftime(date, sizeof(date), "%a, %d %b %Y %X %Z", gmtime(&rawtime));
 
 	return std::string(date);
 }
