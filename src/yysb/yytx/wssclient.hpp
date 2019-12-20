@@ -122,23 +122,23 @@ WSSClient::WSSClient(API_IFNO API, COMMON_INFO COMMON, BUSINESS_INFO BUSINESS, D
 	: API(API), COMMON(COMMON), BUSINESS(BUSINESS), DATA(DATA), OTHER(OTHER)
 {
 	// 开启/关闭相关日志
-	// wssclient.set_access_channels(websocketpp::log::alevel::all);
-	wssclient.clear_access_channels(websocketpp::log::alevel::all);
-	// wssclient.set_error_channels(websocketpp::log::elevel::all);sssss
-	wssclient.clear_error_channels(websocketpp::log::alevel::all);
+	// this->wssclient.set_access_channels(websocketpp::log::alevel::all);
+	this->wssclient.clear_access_channels(websocketpp::log::alevel::all);
+	// this->wssclient.set_error_channels(websocketpp::log::elevel::all);sssss
+	this->wssclient.clear_error_channels(websocketpp::log::alevel::all);
 
 	// 初始化Asio
-	wssclient.init_asio();
+	this->wssclient.init_asio();
 
 	// 绑定事件
 	using websocketpp::lib::bind;
 	using websocketpp::lib::placeholders::_1;
 	using websocketpp::lib::placeholders::_2;
-	wssclient.set_open_handler(bind(&WSSClient::on_open, this, _1));
-	wssclient.set_close_handler(bind(&WSSClient::on_close, this, _1));
-	wssclient.set_fail_handler(bind(&WSSClient::on_fail, this, _1));
-	wssclient.set_message_handler(bind(&WSSClient::on_message, this, _1, _2));
-	wssclient.set_tls_init_handler(bind(&WSSClient::on_tls_init)); // tls初始化，用于wss
+	this->wssclient.set_open_handler(bind(&WSSClient::on_open, this, _1));
+	this->wssclient.set_close_handler(bind(&WSSClient::on_close, this, _1));
+	this->wssclient.set_fail_handler(bind(&WSSClient::on_fail, this, _1));
+	this->wssclient.set_message_handler(bind(&WSSClient::on_message, this, _1, _2));
+	this->wssclient.set_tls_init_handler(bind(&WSSClient::on_tls_init)); // tls初始化，用于wss
 }
 
 // 启动客户端
@@ -150,16 +150,16 @@ void WSSClient::start_client()
 
 	// 创建一个新的连接请求
 	websocketpp::lib::error_code ec;
-	client::connection_ptr con = wssclient.get_connection(url, ec);
+	client::connection_ptr con = this->wssclient.get_connection(url, ec);
 	if (ec)
 	{
 		throw "Get Connection Error: " + ec.message();
 	}
 
 	// 连接到url
-	wssclient.connect(con);
+	this->wssclient.connect(con);
 	// 运行
-	wssclient.run();
+	this->wssclient.run();
 }
 
 // 打开连接事件的回调函数
@@ -306,12 +306,12 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 		{
 			// 第一帧处理
 			json data = {
-				{"common", {{"app_id", COMMON.APPID}}},
-				{"business", {{"language", BUSINESS.language}, {"domain", BUSINESS.domain}, {"accent", BUSINESS.accent}}},
+				{"common", {{"app_id", this->COMMON.APPID}}},
+				{"business", {{"language", this->BUSINESS.language}, {"domain", this->BUSINESS.domain}, {"accent", this->BUSINESS.accent}}},
 				{"data", {
 							 {"status", 0},
-							 {"format", DATA.format},
-							 {"encoding", DATA.encoding},
+							 {"format", this->DATA.format},
+							 {"encoding", this->DATA.encoding},
 							 {"audio", get_base64_encode(string((char *)opus, nbytes + 2))},
 						 }}};
 
@@ -325,8 +325,8 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 			json data = {
 				{"data", {
 							 {"status", 1},
-							 {"format", DATA.format},
-							 {"encoding", DATA.encoding},
+							 {"format", this->DATA.format},
+							 {"encoding", this->DATA.encoding},
 							 {"audio", get_base64_encode(string((char *)opus, nbytes + 2))},
 						 }}};
 
@@ -339,8 +339,8 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 			json data = {
 				{"data", {
 							 {"status", 2},
-							 {"format", DATA.format},
-							 {"encoding", DATA.encoding},
+							 {"format", this->DATA.format},
+							 {"encoding", this->DATA.encoding},
 							 {"audio", get_base64_encode(string((char *)opus, 0))},
 						 }}};
 
