@@ -1,3 +1,6 @@
+#ifndef _UTILS_HPP
+#define _UTILS_HPP
+
 #include <string>
 #include <openssl/hmac.h>
 #include <boost/archive/iterators/base64_from_binary.hpp>
@@ -104,3 +107,5 @@ void delay(double t)
 	{
 	}
 }
+
+#endif

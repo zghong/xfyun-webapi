@@ -1,18 +1,27 @@
 /**
- * @author iflytek
+ * @Copyright: https://www.xfyun.cn/
+ * 
+ * @Author: iflytek
+ * 
+ * @Data: 2019-12-20
  * 
  * 本文件包含“讯飞开放平台-语音识别-语音听写”的WebAPI接口Demo相关类及参数定义
  * WSSClient类基于websocketpp 0.8.1开源框架实现，具体查看：https://github.com/zaphoyd/websocketpp
  * 
- * WSSSlient类实现了向“讯飞开放平台-语音识别-语音听写”服务器发送基于WSS的websocket请求
+ * WSSlient类实现了向“讯飞开放平台-语音识别-语音听写”服务器发送基于WSS的websocket请求
  * 如果需要实现WS的websocket请求请参考websoketpp帮助文档：https://www.zaphoyd.com/websocketpp
  */
+
+#ifndef _WSSCLIENT_HPP
+#define _WSSCLIENT_HPP
 
 #include <websocketpp/config/asio_client.hpp>
 #include <websocketpp/client.hpp>
 
-#include "../../../include/utils.hpp"
-#include "../../../include/json.hpp"
+#include <opus/opus.h>
+
+#include "utils.hpp"
+#include "json.hpp"
 
 using namespace std;
 using json = nlohmann::json;
@@ -62,18 +71,31 @@ struct DATA_INFO
 	// string audio; // audio程序运行中指定
 };
 
+// 其他参数
+struct OTHER_INFO
+{
+	string audio_file;
+	int sample_rate; // 采样率
+	int bit_depth; // 位深
+	int channel; // 声道数
+	double frame_time; // 帧时长，决定一帧字节大小
+	int encoded_bit_rate; // 编码码率，决定压缩程度
+};
+
 /**
- * 与服务器进行websocket通信的wss客户端类
- * m_client，websocketpp对象
- * AudioFile，音频文件路径
+ * 定义WSSClient类，与服务器进行websocket通信的wss客户端
+ * 
+ * wssclient，websocketpp对象
  * COMMON，公共参数
  * BUSINESS，业务参数
  * DATA，业务数据流参数
+ * OTHER，其他参数
  */
 class WSSClient
 {
 public:
-	WSSClient(string AudioFile, API_IFNO API, COMMON_INFO COMMON, BUSINESS_INFO BUSINESS, DATA_INFO DATA);
+	WSSClient(API_IFNO API, COMMON_INFO COMMON, BUSINESS_INFO BUSINESS, DATA_INFO DATA, OTHER_INFO OTHER);
+
 	void start_client();
 	void on_open(websocketpp::connection_hdl hdl);
 	void on_close(websocketpp::connection_hdl hdl);
@@ -84,38 +106,39 @@ public:
 	static context_ptr on_tls_init();
 
 private:
-	client m_client;
-	string AudioFile;
+	client wssclient;
 	API_IFNO API;
 	COMMON_INFO COMMON;
 	BUSINESS_INFO BUSINESS;
 	DATA_INFO DATA;
+	OTHER_INFO OTHER;
 };
 
 /**
- * 对WSSClient的实现
+ * 实现WSSClient
  */
-WSSClient::WSSClient(string AudioFile, API_IFNO API, COMMON_INFO COMMON, BUSINESS_INFO BUSINESS, DATA_INFO DATA)
-	: AudioFile(AudioFile), API(API), COMMON(COMMON), BUSINESS(BUSINESS), DATA(DATA)
+// 构造函数
+WSSClient::WSSClient(API_IFNO API, COMMON_INFO COMMON, BUSINESS_INFO BUSINESS, DATA_INFO DATA, OTHER_INFO OTHER)
+	: API(API), COMMON(COMMON), BUSINESS(BUSINESS), DATA(DATA), OTHER(OTHER)
 {
 	// 开启/关闭相关日志
-	// m_client.set_access_channels(websocketpp::log::alevel::all);
-	m_client.clear_access_channels(websocketpp::log::alevel::all);
-	// m_client.set_error_channels(websocketpp::log::elevel::all);
-	m_client.clear_error_channels(websocketpp::log::alevel::all);
+	// wssclient.set_access_channels(websocketpp::log::alevel::all);
+	wssclient.clear_access_channels(websocketpp::log::alevel::all);
+	// wssclient.set_error_channels(websocketpp::log::elevel::all);sssss
+	wssclient.clear_error_channels(websocketpp::log::alevel::all);
 
 	// 初始化Asio
-	m_client.init_asio();
+	wssclient.init_asio();
 
 	// 绑定事件
 	using websocketpp::lib::bind;
 	using websocketpp::lib::placeholders::_1;
 	using websocketpp::lib::placeholders::_2;
-	m_client.set_open_handler(bind(&WSSClient::on_open, this, _1));
-	m_client.set_close_handler(bind(&WSSClient::on_close, this, _1));
-	m_client.set_fail_handler(bind(&WSSClient::on_fail, this, _1));
-	m_client.set_message_handler(bind(&WSSClient::on_message, this, _1, _2));
-	m_client.set_tls_init_handler(bind(&WSSClient::on_tls_init)); // tls初始化，用于wss
+	wssclient.set_open_handler(bind(&WSSClient::on_open, this, _1));
+	wssclient.set_close_handler(bind(&WSSClient::on_close, this, _1));
+	wssclient.set_fail_handler(bind(&WSSClient::on_fail, this, _1));
+	wssclient.set_message_handler(bind(&WSSClient::on_message, this, _1, _2));
+	wssclient.set_tls_init_handler(bind(&WSSClient::on_tls_init)); // tls初始化，用于wss
 }
 
 // 启动客户端
@@ -127,16 +150,16 @@ void WSSClient::start_client()
 
 	// 创建一个新的连接请求
 	websocketpp::lib::error_code ec;
-	client::connection_ptr con = m_client.get_connection(url, ec);
+	client::connection_ptr con = wssclient.get_connection(url, ec);
 	if (ec)
 	{
 		throw "Get Connection Error: " + ec.message();
 	}
 
 	// 连接到url
-	m_client.connect(con);
+	wssclient.connect(con);
 	// 运行
-	m_client.run();
+	wssclient.run();
 }
 
 // 打开连接事件的回调函数
@@ -154,7 +177,7 @@ void WSSClient::on_close(websocketpp::connection_hdl hdl)
 {
 	cout << "on_close" << endl;
 
-	// client::connection_ptr con = this->m_client.get_con_from_hdl(hdl);
+	// client::connection_ptr con = this->wssclient.get_con_from_hdl(hdl);
 	// cout << con->get_ec() << " - " << con->get_ec().message() << endl;
 }
 
@@ -163,7 +186,7 @@ void WSSClient::on_fail(websocketpp::connection_hdl hdl)
 {
 	cout << "on_fail" << endl;
 
-	client::connection_ptr con = this->m_client.get_con_from_hdl(hdl);
+	client::connection_ptr con = this->wssclient.get_con_from_hdl(hdl);
 	stringstream ss;
 	ss << "[websocketpp info] " << con->get_ec() << " - " << con->get_ec().message() << endl;
 	ss << "[response info] " << con->get_response_code() << " - " << con->get_response_msg();
@@ -194,7 +217,7 @@ void WSSClient::on_message(websocketpp::connection_hdl hdl, client::message_ptr 
 		if (recv_data["data"]["result"]["ls"])
 		{
 			// 客户端主动关闭连接
-			client::connection_ptr con = this->m_client.get_con_from_hdl(hdl);
+			client::connection_ptr con = this->wssclient.get_con_from_hdl(hdl);
 			if (con != NULL && con->get_state() == websocketpp::session::state::value::open)
 			{
 				con->close(0, "receive over");
@@ -208,14 +231,15 @@ void WSSClient::on_message(websocketpp::connection_hdl hdl, client::message_ptr 
 	else
 	{
 		// 客户端主动关闭连接
-		client::connection_ptr con = this->m_client.get_con_from_hdl(hdl);
+		client::connection_ptr con = this->wssclient.get_con_from_hdl(hdl);
 		if (con != NULL && con->get_state() == websocketpp::session::state::value::open)
 		{
 			con->close(0, "receive over");
 		}
 
 		stringstream ss;
-		ss << "[response info] " << "sid: " << sid << " call error, code: " << code << ", errMsg: " << recv_data["message"];
+		ss << "[response info] "
+		   << "sid: " << sid << " call error, code: " << code << ", errMsg: " << recv_data["message"];
 		throw ss.str();
 	}
 }
@@ -223,24 +247,51 @@ void WSSClient::on_message(websocketpp::connection_hdl hdl, client::message_ptr 
 // 发送音频数据给服务器
 void WSSClient::send_data(websocketpp::connection_hdl hdl)
 {
-	int frame_size = 1280;							 // 每一帧的音频大小
-	double intervel = 0.04;							 // 发送音频间隔(单位:s)
-	STATUS_INFO current_status = STATUS_FIRST_FRAME; // 音频的状态信息，标识音频是第一帧，还是中间帧、最后一帧
+	// 原始每一帧的音频大小(单位:byte)，sample_rate*bit_depth*channel*frame_time
+	int frame_len = this->OTHER.sample_rate * this->OTHER.bit_depth * this->OTHER.channel * this->OTHER.frame_time / 8;
+	// 帧大小，每声道给pcm的长度，frame_time/(1/sample_rate)
+	int frame_size = this->OTHER.frame_time * this->OTHER.sample_rate;
+	// 发送音频帧间隔(单位:s)
+	double intervel = this->OTHER.frame_time;
+	// 音频的状态信息，标识音频是第一帧，还是中间帧、最后一帧
+	STATUS_INFO current_status = STATUS_FIRST_FRAME;
+	// printf("%d, %d, %f\n", frame_len, frame_size, intervel);
 
-	FILE *fp = fopen(this->AudioFile.c_str(), "rb");
+	FILE *fp = fopen(this->OTHER.audio_file.c_str(), "rb");
 	if (fp == NULL)
 	{
 		// 文件打开错误
-		throw "open file: [" + this->AudioFile + "] failed!";
+		throw "open file: [" + this->OTHER.audio_file + "] failed!";
 	}
 
 	// 音频数据帧缓冲区
-	// int count = 0;
-	char *buffer = new char[frame_size + 10];
+	int count = 0;
+	unsigned char *pcm = new unsigned char[frame_len + 10];
+	unsigned char *opus = new unsigned char[frame_len + 10];
+
+	int err = 0;
+	OpusEncoder *enc = opus_encoder_create(this->OTHER.sample_rate, this->OTHER.channel, OPUS_APPLICATION_VOIP, &err);
+	if (err != OPUS_OK)
+	{
+		throw "创建编码器失败";
+	}
+	opus_encoder_ctl(enc, OPUS_SET_VBR(0));								   // 固定码率
+	opus_encoder_ctl(enc, OPUS_SET_BITRATE(this->OTHER.encoded_bit_rate)); // 编码码率
+
 	while (current_status != STATUS_LAST_FRAME)
 	{
-		int size = fread(buffer, sizeof(char), frame_size, fp);
-		// TODO: 音频编解码
+		int size = fread(pcm, sizeof(char), frame_len, fp);
+
+		// 音频编解码
+		memset(opus, 0, frame_len + 10);
+		opus_int32 nbytes = opus_encode(enc, (opus_int16 *)pcm, frame_size, opus + 2, frame_len);
+		if (nbytes <= 0)
+		{
+			throw "编码pcm数据失败";
+		}
+		// 两字节的opus头信息，存储opus编码数据长度，大端
+		opus[0] = (nbytes & 0xFF00) >> 8;
+		opus[1] = nbytes & 0x00FF;
 
 		// 读到的字节数为0，说明当前是最后一帧
 		if (!size)
@@ -261,10 +312,10 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 							 {"status", 0},
 							 {"format", DATA.format},
 							 {"encoding", DATA.encoding},
-							 {"audio", get_base64_encode(string(buffer, size))},
+							 {"audio", get_base64_encode(string((char *)opus, nbytes + 2))},
 						 }}};
 
-			this->m_client.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
+			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
 			current_status = STATUS_CONTINUE_FRAME;
 			break;
 		}
@@ -276,10 +327,10 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 							 {"status", 1},
 							 {"format", DATA.format},
 							 {"encoding", DATA.encoding},
-							 {"audio", get_base64_encode(string(buffer, size))},
+							 {"audio", get_base64_encode(string((char *)opus, nbytes + 2))},
 						 }}};
 
-			this->m_client.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
+			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
 			break;
 		}
 		case STATUS_LAST_FRAME:
@@ -290,21 +341,22 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 							 {"status", 2},
 							 {"format", DATA.format},
 							 {"encoding", DATA.encoding},
-							 {"audio", get_base64_encode(string(buffer, size))},
+							 {"audio", get_base64_encode(string((char *)opus, 0))},
 						 }}};
 
-			this->m_client.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
+			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
 			break;
 		}
 		}
 
 		// 模拟音频采样间隔
 		delay(intervel);
-		// // 输出进度
-		// printf("\r第%d帧已发送...", ++count);
-		// fflush(stdout);
+		// 输出进度
+		printf("\r第%d帧已发送...", ++count);
+		fflush(stdout);
 	}
 
+	opus_encoder_destroy(enc);
 	fclose(fp);
 }
 
@@ -361,3 +413,5 @@ context_ptr WSSClient::on_tls_init()
 	}
 	return ctx;
 }
+
+#endif
