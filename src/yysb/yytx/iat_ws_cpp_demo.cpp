@@ -10,6 +10,7 @@
  * boost 1.69.0
  * websocketpp 0.8.1
  * libssl-dev 1.1.1
+ * opus 1.3.1
  * 注：测试时，websocketpp 0.8.1最高兼容的版本是1.69.0，具体查看：https://github.com/zaphoyd/websocketpp/issues
  * 
  * 语音听写流式 WebAPI 接口调用示例 接口文档（必看）：https://www.xfyun.cn/doc/asr/voicedictation/API.html
