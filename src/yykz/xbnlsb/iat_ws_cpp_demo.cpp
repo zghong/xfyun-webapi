@@ -21,12 +21,12 @@
 // 编译运行前，请填写相关参数
 // g++ iat_ws_cpp_demo.cpp -lboost_system -lpthread -lcrypto -lssl
 const API_IFNO API{
-    APISecret : "4d3dcdf6184d4aa4d987cecca7de3896",
-    APIKey : "5d5fe0d6177df2afc8a03909b71259eb",
+    APISecret : "",
+    APIKey : "",
 };
 
 const COMMON_INFO COMMON{
-    APPID : "5dde2318",
+    APPID : "",
 };
 
 const BUSINESS_INFO BUSINESS{
