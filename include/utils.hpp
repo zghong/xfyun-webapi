@@ -2,7 +2,9 @@
 #define _UTILS_HPP
 
 #include <string>
+#include <sstream>
 #include <openssl/hmac.h>
+#include <openssl/md5.h>
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/binary_from_base64.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
@@ -134,6 +136,53 @@ void delay(double t)
 	while ((clock() - start_time) < t * CLOCKS_PER_SEC)
 	{
 	}
+}
+
+/**
+ * md5算法，利用key对data进行加密认证处理
+ * 输入：data，待md5的数据
+ * 输出：128位字符的散列值，为方便处理，输出时转换为了十六进制的string
+ */
+std::string get_md5(const std::string &data)
+{
+	unsigned char *result = new unsigned char[20];
+
+	MD5_CTX ctx;
+	MD5_Init(&ctx);
+	MD5_Update(&ctx, data.c_str(), data.size());
+	MD5_Final(result, &ctx);
+
+	char *buf = new char[32];
+	for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
+	{
+		sprintf((char *)&buf[i * 2], "%02x", result[i]);
+	}
+
+	return std::string(buf, MD5_DIGEST_LENGTH * 2);
+}
+
+/**
+ * hmac_sha1算法，利用key对data进行加密认证处理
+ * 输入：data，待sha1的数据；key，mac的密钥
+ * 输出：160位加密字符，为方便处理，输出时转换为了string
+ */
+std::string get_hmac_sha1(const std::string &data, const std::string &key)
+{
+	unsigned char *result = new unsigned char[25];
+	unsigned int result_len = 0;
+
+	HMAC_CTX *ctx = HMAC_CTX_new();
+	HMAC_Init_ex(ctx, key.c_str(), key.size(), EVP_sha1(), NULL);
+	HMAC_Update(ctx, (unsigned char *)data.c_str(), data.size());
+	HMAC_Final(ctx, result, &result_len);
+	HMAC_CTX_free(ctx);
+
+	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+	// 不可以return string(result)，string的构造函数不接受unsigned char *
+	// 不可以直接 return (char *)result
+	// 因为result后面还有空余字符，加密的值要严格控制在result_len的长度范围内
+	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+	return std::string((char *)result, result_len);
 }
 
 #endif
