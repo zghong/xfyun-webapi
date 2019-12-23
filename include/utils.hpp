@@ -4,6 +4,7 @@
 #include <string>
 #include <openssl/hmac.h>
 #include <boost/archive/iterators/base64_from_binary.hpp>
+#include <boost/archive/iterators/binary_from_base64.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
 
 /**
@@ -61,6 +62,33 @@ std::string get_base64_encode(const std::string &data)
 	{
 		result.put('=');
 	}
+
+	return result.str();
+}
+
+/**
+ * base64解码算法
+ * 输入：data，待解码数据
+ * 输出：data被base64解码后的字符串
+ */
+std::string get_base64_decode(const std::string &data)
+{
+	typedef boost::archive::iterators::transform_width<boost::archive::iterators::binary_from_base64<std::string::const_iterator>, 8, 6> Base64DecodeIterator;
+
+	std::stringstream result;
+
+	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+	// Base64编码原理是把3字节的二进制数据编码为4字节的文本数据，长度增加33%。
+	// 如果要编码的二进制数据不是3的倍数，会在最后剩下1个或2个字节用\x00字节在末尾补足，然后在编码的末尾加上1个或2个=号。
+	// 所以在Base64解码中会将=号解码为\0，这对文本无影响，但是对音频有影响，所以需要手动将=去除再解码。
+	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+	std::string temp = data;
+	while (temp[temp.size() - 1] == '=')
+	{
+		temp.erase(temp.size() - 1);
+	}
+
+	std::copy(Base64DecodeIterator(temp.begin()), Base64DecodeIterator(temp.end()), std::ostream_iterator<char>(result));
 
 	return result.str();
 }
