@@ -15,10 +15,8 @@
 #ifndef _WSSCLIENT_HPP
 #define _WSSCLIENT_HPP
 
-#include <websocketpp/config/asio_client.hpp>
-#include <websocketpp/client.hpp>
-
-#include <opus/opus.h>
+#include "websocketpp/config/asio_client.hpp"
+#include "websocketpp/client.hpp"
 
 #include "utils.hpp"
 #include "json.hpp"
@@ -35,7 +33,6 @@ typedef websocketpp::lib::shared_ptr<websocketpp::lib::asio::ssl::context> conte
 // 接口鉴权参数
 struct API_IFNO
 {
-	string APISecret;
 	string APIKey;
 };
 
