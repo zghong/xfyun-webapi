@@ -12,20 +12,16 @@
  * libssl-dev 1.1.1
  * opus 1.3.1
  * 注：测试时，websocketpp 0.8.1最高兼容的版本是1.69.0，具体查看：https://github.com/zaphoyd/websocketpp/issues
+ * 注：项目目录已安装websocket 0.8.1，opus 1.3.1；但是运行环境应该还要自行安装boost 0.8.1，libssl-dev 1.1.1
  * 
- * 语音听写流式 WebAPI 接口调用示例 接口文档（必看）：https://www.xfyun.cn/doc/asr/voicedictation/API.html
- * 语音听写流式 WebAPI 服务，热词使用方式：登陆开放平台https://www.xfyun.cn/后，找到控制台--我的应用---语音听写---服务管理--上传热词
- * 设置热词
- * 注意：热词只能在识别的时候会增加热词的识别权重，需要注意的是增加相应词条的识别率，但并不是绝对的，具体效果以您测试为准。
- * 语音听写流式 WebAPI 服务，方言试用方法：登陆开放平台https://www.xfyun.cn/后，找到控制台--我的应用---语音听写（流式）---服务管理--识别语种列表
- * 可添加语种或方言，添加后会显示该方言的参数值
- * 错误码链接：https://www.xfyun.cn/document/error-code （code返回错误码时必看）
+ * 语音听写（流式版）WebAPI 文档：https://www.xfyun.cn/doc/asr/voicedictation/API.html
+ * 错误码链接：https://www.xfyun.cn/document/error-code
  */
 
 #include "wssclient.hpp"
 
 // 编译运行前，请填写相关参数
-// g++ iat_ws_cpp_demo.cpp -lboost_system -lpthread -lcrypto -lssl -lopus
+// g++ iat_ws_cpp_demo.cpp -lboost_system -lpthread -lcrypto -lssl -lopus -I ../../../include/ -L ../../../lib/
 const API_IFNO API{
     APISecret : "",
     APIKey : ""
@@ -44,16 +40,16 @@ const BUSINESS_INFO BUSINESS{
 
 const DATA_INFO DATA{
     format : "audio/L16;rate=16000",
-    encoding : "opus-wb",
+    encoding : "opus-wb", // 样例采用opus-wb编码
 };
 
 const OTHER_INFO OTHER{
-    audio_file : "../../../bin/audio/iat_pcm_16k.pcm",
-    sample_rate : 16000,
-    bit_depth : 16,
-    channel : 1,
-    frame_time : 0.02,
-    encoded_bit_rate : 24000,
+    audio_file : "",
+    sample_rate : 16000, // 采样率
+    bit_depth : 16, // 位深
+    channel : 1, // 声道数
+    frame_time : 0.02, // 帧时长
+    encoded_bit_rate : 24000, // opus编码码率
 };
 
 int main(int argc, char *argv[])

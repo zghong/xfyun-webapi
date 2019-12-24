@@ -15,10 +15,10 @@
 #ifndef _WSSCLIENT_HPP
 #define _WSSCLIENT_HPP
 
-#include <websocketpp/config/asio_client.hpp>
-#include <websocketpp/client.hpp>
+#include "websocketpp/config/asio_client.hpp"
+#include "websocketpp/client.hpp"
 
-#include <opus/opus.h>
+#include "opus/opus.h"
 
 #include "utils.hpp"
 #include "json.hpp"
@@ -75,10 +75,11 @@ struct DATA_INFO
 struct OTHER_INFO
 {
 	string audio_file;
-	int sample_rate; // 采样率
-	int bit_depth; // 位深
-	int channel; // 声道数
-	double frame_time; // 帧时长，决定一帧字节大小
+	// 音频相关参数
+	int sample_rate;	  // 采样率
+	int bit_depth;		  // 位深
+	int channel;		  // 声道数
+	double frame_time;	// 帧时长，决定一帧字节大小
 	int encoded_bit_rate; // 编码码率，决定压缩程度
 };
 
@@ -86,6 +87,7 @@ struct OTHER_INFO
  * 定义WSSClient类，与服务器进行websocket通信的wss客户端
  * 
  * wssclient，websocketpp对象
+ * API，接口鉴权参数
  * COMMON，公共参数
  * BUSINESS，业务参数
  * DATA，业务数据流参数
@@ -124,7 +126,7 @@ WSSClient::WSSClient(API_IFNO API, COMMON_INFO COMMON, BUSINESS_INFO BUSINESS, D
 	// 开启/关闭相关日志
 	// this->wssclient.set_access_channels(websocketpp::log::alevel::all);
 	this->wssclient.clear_access_channels(websocketpp::log::alevel::all);
-	// this->wssclient.set_error_channels(websocketpp::log::elevel::all);sssss
+	// this->wssclient.set_error_channels(websocketpp::log::elevel::all);
 	this->wssclient.clear_error_channels(websocketpp::log::alevel::all);
 
 	// 初始化Asio
@@ -252,7 +254,7 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 	// 帧大小，每声道给pcm的长度，frame_time/(1/sample_rate)
 	int frame_size = this->OTHER.frame_time * this->OTHER.sample_rate;
 	// 发送音频帧间隔(单位:s)
-	double intervel = this->OTHER.frame_time;
+	double interval = this->OTHER.frame_time;
 	// 音频的状态信息，标识音频是第一帧，还是中间帧、最后一帧
 	STATUS_INFO current_status = STATUS_FIRST_FRAME;
 	// printf("%d, %d, %f\n", frame_len, frame_size, intervel);
@@ -283,7 +285,7 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 		int size = fread(pcm, sizeof(char), frame_len, fp);
 
 		// 音频编解码
-		memset(opus, 0, frame_len + 10);
+		memset(opus, 0, sizeof(opus));
 		opus_int32 nbytes = opus_encode(enc, (opus_int16 *)pcm, frame_size, opus + 2, frame_len);
 		if (nbytes <= 0)
 		{
@@ -315,7 +317,7 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 							 {"audio", get_base64_encode(string((char *)opus, nbytes + 2))},
 						 }}};
 
-			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
+			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::text);
 			current_status = STATUS_CONTINUE_FRAME;
 			break;
 		}
@@ -330,7 +332,7 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 							 {"audio", get_base64_encode(string((char *)opus, nbytes + 2))},
 						 }}};
 
-			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
+			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::text);
 			break;
 		}
 		case STATUS_LAST_FRAME:
@@ -344,13 +346,13 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 							 {"audio", get_base64_encode(string((char *)opus, 0))},
 						 }}};
 
-			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
+			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::text);
 			break;
 		}
 		}
 
 		// 模拟音频采样间隔
-		delay(intervel);
+		delay(interval);
 		// 输出进度
 		printf("\r第%d帧已发送...", ++count);
 		fflush(stdout);
