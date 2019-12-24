@@ -1,3 +1,13 @@
+/**
+ * @Copyright: https://www.xfyun.cn/
+ * 
+ * @Author: iflytek
+ * 
+ * @Data: 2019-12-20
+ * 
+ * 本文件包含“讯飞开放平台”的WebAPI接口Demo相关工具类函数实现
+ */
+
 #ifndef _UTILS_HPP
 #define _UTILS_HPP
 
@@ -12,7 +22,7 @@
 /**
  * 获取当前时间戳，并格式化成rfc1123格式
  * 输入：
- * 输出：当前时间戳的rfc1123格式字符串。"Thu, 05 Dec 2019 09:54:17 GMT"
+ * 输出：当前时间戳的rfc1123格式字符串
  */
 std::string get_time_rfc1123()
 {
@@ -25,8 +35,8 @@ std::string get_time_rfc1123()
 
 /**
  * hmac_sha256算法，利用key对data进行加密认证处理
- * 输入：data，待sha256的数据；key，mac的密钥
- * 输出：256位加密字符，为方便处理，输出时转换为了string。"e�FX��}U0���^V!D@�����`|v"
+ * 输入：data，待hmac_sha256的数据；key，mac的密钥
+ * 输出：256位加密字符，为方便处理，输出时转换为string
  */
 std::string get_hmac_sha256(const std::string &data, const std::string &key)
 {
@@ -41,7 +51,7 @@ std::string get_hmac_sha256(const std::string &data, const std::string &key)
 
 	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
 	// 不可以return string(result)，string的构造函数不接受unsigned char *
-	// 不可以直接 return (char *)result
+	// 不可以直接 return string((char *)result)
 	// 因为result后面还有空余字符，加密的值要严格控制在result_len的长度范围内
 	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
 	return std::string((char *)result, result_len);
@@ -50,7 +60,7 @@ std::string get_hmac_sha256(const std::string &data, const std::string &key)
 /**
  * base64编码算法
  * 输入：data，待编码数据
- * 输出：data被base64编码后的字符串。"KuSCRlicg30QVTChBdToXlYhREDPxdkDiKNgfHYiDWU="
+ * 输出：data被base64编码后的字符串
  */
 std::string get_base64_encode(const std::string &data)
 {
@@ -139,9 +149,9 @@ void delay(double t)
 }
 
 /**
- * md5算法，利用key对data进行加密认证处理
+ * md5算法，对data进行md5认证处理
  * 输入：data，待md5的数据
- * 输出：128位字符的散列值，为方便处理，输出时转换为了十六进制的string
+ * 输出：128位字符的散列值，此处不可简单转成string，讯飞要求md5后为小写十六进制数据
  */
 std::string get_md5(const std::string &data)
 {
@@ -155,7 +165,7 @@ std::string get_md5(const std::string &data)
 	char *buf = new char[32];
 	for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
 	{
-		sprintf((char *)&buf[i * 2], "%02x", result[i]);
+		sprintf(buf + 2 * i, "%02x", result[i]);
 	}
 
 	return std::string(buf, MD5_DIGEST_LENGTH * 2);
@@ -163,8 +173,8 @@ std::string get_md5(const std::string &data)
 
 /**
  * hmac_sha1算法，利用key对data进行加密认证处理
- * 输入：data，待sha1的数据；key，mac的密钥
- * 输出：160位加密字符，为方便处理，输出时转换为了string
+ * 输入：data，待hmac_sha1的数据；key，mac的密钥
+ * 输出：160位加密字符，为方便处理，输出时转换为string
  */
 std::string get_hmac_sha1(const std::string &data, const std::string &key)
 {
@@ -179,7 +189,7 @@ std::string get_hmac_sha1(const std::string &data, const std::string &key)
 
 	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
 	// 不可以return string(result)，string的构造函数不接受unsigned char *
-	// 不可以直接 return (char *)result
+	// 不可以直接 return string(char *)result)
 	// 因为result后面还有空余字符，加密的值要严格控制在result_len的长度范围内
 	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
 	return std::string((char *)result, result_len);
