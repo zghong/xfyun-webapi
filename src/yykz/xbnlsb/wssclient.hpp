@@ -15,10 +15,8 @@
 #ifndef _WSSCLIENT_HPP
 #define _WSSCLIENT_HPP
 
-#include <websocketpp/config/asio_client.hpp>
-#include <websocketpp/client.hpp>
-
-#include <opus/opus.h>
+#include "websocketpp/config/asio_client.hpp"
+#include "websocketpp/client.hpp"
 
 #include "utils.hpp"
 #include "json.hpp"
@@ -77,6 +75,7 @@ struct OTHER_INFO
  * 定义WSSClient类，与服务器进行websocket通信的wss客户端
  * 
  * wssclient，websocketpp对象
+ * API，接口鉴权参数
  * COMMON，公共参数
  * BUSINESS，业务参数
  * DATA，业务数据流参数
@@ -293,7 +292,7 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 							 {"audio", get_base64_encode(string((char *)pcm, size))},
 						 }}};
 
-			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
+			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::text);
 			current_status = STATUS_CONTINUE_FRAME;
 			break;
 		}
@@ -306,7 +305,7 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 							 {"audio", get_base64_encode(string((char *)pcm, size))},
 						 }}};
 
-			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
+			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::text);
 			break;
 		}
 		case STATUS_LAST_FRAME:
@@ -318,7 +317,7 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 							 {"audio", get_base64_encode(string((char *)pcm, size))},
 						 }}};
 
-			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::binary);
+			this->wssclient.send(hdl, data.dump(), websocketpp::frame::opcode::text);
 			break;
 		}
 		}
