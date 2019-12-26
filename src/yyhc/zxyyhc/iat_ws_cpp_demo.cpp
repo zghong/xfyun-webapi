@@ -10,16 +10,18 @@
  * boost 1.69.0
  * websocketpp 0.8.1
  * libssl-dev 1.1.1
+ * speex 1.2.0
  * 注：测试时，websocketpp 0.8.1最高兼容的版本是1.69.0，具体查看：https://github.com/zaphoyd/websocketpp/issues
+ * 注：项目目录已安装websocket 0.8.1，speex 1.2.0；但是运行环境应该还要自行安装boost 0.8.1，libssl-dev 1.1.1
  * 
- * 合成小语种需要传输小语种文本、使用小语种发音人vcn、ent=mtts、tte=unicode以及修改文本编码方式
- * 错误码链接：https://www.xfyun.cn/document/error-code （code返回错误码时必看）
+ * 语音合成（流式版）WebAPI 文档：https://www.xfyun.cn/doc/tts/online_tts/API.html
+ * 错误码链接：https://www.xfyun.cn/document/error-code
  */
 
 #include "wssclient.hpp"
 
 // 编译运行前，请填写相关参数
-// g++ iat_ws_cpp_demo.cpp -lboost_system -lpthread -lcrypto -lssl
+// g++ iat_ws_cpp_demo.cpp -lboost_system -lpthread -lcrypto -lssl -lspeex -I ../../../include/ -L ../../../lib/
 const API_IFNO API{
     APISecret : "",
     APIKey : "",
@@ -30,7 +32,7 @@ const COMMON_INFO COMMON{
 };
 
 const BUSINESS_INFO BUSINESS{
-    aue : "raw",
+    aue : "speex-wb", // 样例采用speex-wb编码
     vcn : "xiaoyan",
     tte : "UTF8",
     // 更多个性化参数可在官网查看
@@ -43,6 +45,7 @@ const DATA_INFO DATA{
 
 const OTHER_INFO OTHER{
     text_file : "",
+    audio_file : "haha.spx", // 生成的语音文件保存路径
 };
 
 int main(int argc, char *argv[])

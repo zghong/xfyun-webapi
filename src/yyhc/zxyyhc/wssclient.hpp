@@ -15,10 +15,10 @@
 #ifndef _WSSCLIENT_HPP
 #define _WSSCLIENT_HPP
 
-#include <websocketpp/config/asio_client.hpp>
-#include <websocketpp/client.hpp>
+#include "websocketpp/config/asio_client.hpp"
+#include "websocketpp/client.hpp"
 
-#include <opus/opus.h>
+#include "speex/speex.h"
 
 #include "utils.hpp"
 #include "json.hpp"
@@ -65,12 +65,14 @@ struct DATA_INFO
 struct OTHER_INFO
 {
 	string text_file;
+	string audio_file;
 };
 
 /**
  * 定义WSSClient类，与服务器进行websocket通信的wss客户端
  * 
  * wssclient，websocketpp对象
+ * API，接口鉴权参数
  * COMMON，公共参数
  * BUSINESS，业务参数
  * DATA，业务数据流参数
@@ -194,11 +196,48 @@ void WSSClient::on_message(websocketpp::connection_hdl hdl, client::message_ptr 
 		json result = recv_data["data"];
 
 		string temp = get_base64_decode(result["audio"]);
-		FILE *fout = fopen("haha.pcm", "ab");
+
+		// 保存原始speex数据
+		FILE *fout = fopen(this->OTHER.audio_file.c_str(), "ab");
 		fwrite(temp.c_str(), sizeof(char), temp.size(), fout);
 		fclose(fout);
+
 		if (result["status"] == 2)
 		{
+			// 将保存好的speex数据解码成pcm数据
+			FILE *fin = fopen(this->OTHER.audio_file.c_str(), "rb");
+			FILE *fout = fopen((this->OTHER.audio_file + ".out.pcm").c_str(), "wb");
+
+			char *spx = new char[640];
+			char *out_pcm = new char[640];
+
+			// 定义解码器
+			void *dec_state;
+			SpeexBits dec_bits;
+
+			speex_bits_init(&dec_bits);
+			dec_state = speex_decoder_init(&speex_wb_mode);
+
+			// 开始解码
+			while (!feof(fin))
+			{
+				// 读取1字节头部
+				fread(spx, sizeof(char), 1, fin);
+				int len = int(*spx);
+				int size = fread(spx, sizeof(char), len, fin);
+
+				speex_bits_reset(&dec_bits);
+				speex_bits_read_from(&dec_bits, spx, len);
+				speex_decode_int(dec_state, &dec_bits, (spx_int16_t *)out_pcm);
+				fwrite(out_pcm, sizeof(char), 640, fout);
+			}
+
+			speex_bits_destroy(&dec_bits);
+			speex_decoder_destroy(dec_state);
+
+			fclose(fin);
+			fclose(fout);
+
 			// 客户端主动关闭连接
 			client::connection_ptr con = this->wssclient.get_con_from_hdl(hdl);
 			if (con != NULL && con->get_state() == websocketpp::session::state::value::open)
@@ -207,7 +246,8 @@ void WSSClient::on_message(websocketpp::connection_hdl hdl, client::message_ptr 
 			}
 
 			// 输出最终结果
-			cout << "sid: " << sid << " call success. The file is saved in [haha.pcm]." << endl;
+			cout << "sid: " << sid << " call success. The original file (.spx) is saved in [" << this->OTHER.audio_file
+				 << "], and the decoded file (.pcm) is saved in [" << this->OTHER.audio_file << ".out.pcm]." << endl;
 		}
 	}
 	else
