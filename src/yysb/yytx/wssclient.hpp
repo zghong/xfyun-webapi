@@ -285,7 +285,7 @@ void WSSClient::send_data(websocketpp::connection_hdl hdl)
 		int size = fread(pcm, sizeof(char), frame_len, fp);
 
 		// 音频编解码
-		memset(opus, 0, sizeof(opus));
+		memset(opus, 0, sizeof(unsigned char) * (frame_len + 10));
 		opus_int32 nbytes = opus_encode(enc, (opus_int16 *)pcm, frame_size, opus + 2, frame_len);
 		if (nbytes <= 0)
 		{
