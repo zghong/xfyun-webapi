@@ -1,15 +1,13 @@
 /**
  * @Copyright: https://www.xfyun.cn/
- * 
  * @Author: iflytek
- * 
  * @Data: 2019-12-20
  * 
  * 本文件包含“讯飞开放平台”的WebAPI接口Demo相关工具类函数实现
  */
 
-#ifndef _UTILS_HPP
-#define _UTILS_HPP
+#ifndef _IFLYTEK_UTILS_HPP
+#define _IFLYTEK_UTILS_HPP
 
 #include <string>
 #include <sstream>
@@ -20,23 +18,10 @@
 #include <boost/archive/iterators/transform_width.hpp>
 
 /**
- * 获取当前时间戳，并格式化成rfc1123格式
- * 输入：
- * 输出：当前时间戳的rfc1123格式字符串
- */
-std::string get_time_rfc1123()
-{
-	time_t rawtime = time(NULL);
-	char date[64];
-	strftime(date, sizeof(date), "%a, %d %b %Y %X %Z", gmtime(&rawtime));
-
-	return std::string(date);
-}
-
-/**
- * hmac_sha256算法，利用key对data进行加密认证处理
- * 输入：data，待hmac_sha256的数据；key，mac的密钥
- * 输出：256位加密字符，为方便处理，输出时转换为string
+ * @brief hmac_sha256算法，利用key对data进行加密认证
+ * @param data 待hmac_sha256的数据
+ * @param key hmac_sha256的密钥
+ * @return 256位加密字符串
  */
 std::string get_hmac_sha256(const std::string &data, const std::string &key)
 {
@@ -49,18 +34,14 @@ std::string get_hmac_sha256(const std::string &data, const std::string &key)
 	HMAC_Final(ctx, result, &result_len);
 	HMAC_CTX_free(ctx);
 
-	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-	// 不可以return string(result)，string的构造函数不接受unsigned char *
-	// 不可以直接 return string((char *)result)
-	// 因为result后面还有空余字符，加密的值要严格控制在result_len的长度范围内
-	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+	// 因为result中可能有空白字符，加密的值要严格控制在result_len的长度范围内
 	return std::string((char *)result, result_len);
 }
 
 /**
- * base64编码算法
- * 输入：data，待编码数据
- * 输出：data被base64编码后的字符串
+ * @brief base64编码算法
+ * @param data 待编码数据
+ * @return data被base64编码后的字符串
  */
 std::string get_base64_encode(const std::string &data)
 {
@@ -79,9 +60,9 @@ std::string get_base64_encode(const std::string &data)
 }
 
 /**
- * base64解码算法
- * 输入：data，待解码数据
- * 输出：data被base64解码后的字符串
+ * @brief base64解码算法
+ * @param data 待解码数据
+ * @return data被base64解码后的字符串
  */
 std::string get_base64_decode(const std::string &data)
 {
@@ -89,11 +70,11 @@ std::string get_base64_decode(const std::string &data)
 
 	std::stringstream result;
 
-	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+	// ******************************************************************************************************
 	// Base64编码原理是把3字节的二进制数据编码为4字节的文本数据，长度增加33%。
-	// 如果要编码的二进制数据不是3的倍数，会在最后剩下1个或2个字节用\x00字节在末尾补足，然后在编码的末尾加上1个或2个=号。
-	// 所以在Base64解码中会将=号解码为\0，这对文本无影响，但是对音频有影响，所以需要手动将=去除再解码。
-	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+	// 如果要编码的二进制数据不是3的倍数，会在最后剩下1个或2个字节用'\x00'字节在末尾补足，然后在编码的末尾加上1个或2个'='号。
+	// 所以在Base64解码中会将'='号解码为'\0'，这对文本无影响，但是对音频有影响，所以需要手动将'='去除再解码。
+	// ******************************************************************************************************
 	std::string temp = data;
 	while (temp[temp.size() - 1] == '=')
 	{
@@ -106,9 +87,9 @@ std::string get_base64_decode(const std::string &data)
 }
 
 /**
- * url编码算法，转义url中的特殊字符和中文字符等
- * 输入：url，待编码的url
- * 输出：被编码转义后的url
+ * @brief url编码算法，转义url中的特殊字符和中文字符等
+ * @param url 待编码的url
+ * @return 被编码转义后的url
  */
 std::string get_url_encode(const std::string &url)
 {
@@ -136,9 +117,8 @@ std::string get_url_encode(const std::string &url)
 }
 
 /**
- * 延迟函数，因为Windows和Linux下的延迟函数各异，开发者可以自定义
- * 输入：t，延迟秒数
- * 输出：
+ * @brief 延迟函数，Windows和Linux下的延迟函数各异
+ * @param t 延迟秒数
  */
 void delay(double t)
 {
@@ -149,9 +129,9 @@ void delay(double t)
 }
 
 /**
- * md5算法，对data进行md5认证处理
- * 输入：data，待md5的数据
- * 输出：128位字符的散列值，此处不可简单转成string，讯飞要求md5后为小写十六进制数据
+ * @brief md5算法，对data进行md5认证处理
+ * @param data 待md5的数据
+ * @return 128位字符的散列值，讯飞要求md5后为小写十六进制数据
  */
 std::string get_md5(const std::string &data)
 {
@@ -172,9 +152,10 @@ std::string get_md5(const std::string &data)
 }
 
 /**
- * hmac_sha1算法，利用key对data进行加密认证处理
- * 输入：data，待hmac_sha1的数据；key，mac的密钥
- * 输出：160位加密字符，为方便处理，输出时转换为string
+ * @brief hmac_sha1算法，利用key对data进行加密认证处理
+ * @param data 待hmac_sha1的数据
+ * @param key hmac_sha1的密钥
+ * @retrun 160位加密字符串
  */
 std::string get_hmac_sha1(const std::string &data, const std::string &key)
 {
@@ -187,11 +168,7 @@ std::string get_hmac_sha1(const std::string &data, const std::string &key)
 	HMAC_Final(ctx, result, &result_len);
 	HMAC_CTX_free(ctx);
 
-	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
-	// 不可以return string(result)，string的构造函数不接受unsigned char *
-	// 不可以直接 return string(char *)result)
-	// 因为result后面还有空余字符，加密的值要严格控制在result_len的长度范围内
-	// ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+	// 因为result中可能有空白字符，加密的值要严格控制在result_len的长度范围内
 	return std::string((char *)result, result_len);
 }
 
